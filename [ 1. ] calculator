@@ -1,0 +1,102 @@
+#include <stdio.h>
+
+int main() {
+
+
+        //variables
+    char operate, cont;
+    int buff, check, valid;
+    double num1, num2, result;
+
+
+        //interface
+    printf("\n  A simple calculator for two inputs\n");
+    printf("---------------------------------------\n");
+    printf("       [No1] ( + - * / ) [No2]\n");
+    printf("---------------------------------------\n");
+
+    do {  // start main calculation loop
+
+
+        // ---------------- for operator ----------------
+        do {
+            valid = 1;
+
+            printf("\n  Choose an operator ( + - * / ) : ");
+            scanf(" %c", &operate);
+
+            while ((buff = getchar()) != '\n' && buff != EOF) {
+                valid = 0;          // mark invalid if extra chars
+            }
+
+            if (!(operate == '+' || operate == '-' || operate == '*' || operate == '/') || !valid)
+                printf("  **Error: Not a valid operator.\n  Please try again.\n");
+
+        } while (!(operate == '+' || operate == '-' || operate == '*' || operate == '/') || !valid);
+
+
+        // ---------------- for numbers 1 and 2 ----------------
+        printf("\n  | You may use fractional numbers |\n");
+
+        do {
+            printf("\n  Enter your first number: ");
+            check = scanf("%lf", &num1);
+            while ((buff = getchar()) != '\n' && buff != EOF) {}
+            if (check != 1) {
+                printf("  **Error: Invalid input.\n  Please enter a valid number.\n");
+            }
+        } while (check != 1);
+
+        do {
+            printf("\n  Enter your second number: ");
+            check = scanf("%lf", &num2);
+            while ((buff = getchar()) != '\n' && buff != EOF) {}
+            if (check != 1) {
+                printf("  **Error: Invalid input.\n  Please enter a valid number.\n");
+            }
+        } while (check != 1);
+
+        if (num1 > 1e15 || num2 > 1e15) {
+            printf("\n  **Warning: Number(s) too large;\n  precision may be lost.\n");
+        }
+
+        // ---------------- calculation ----------------
+        switch (operate) {
+        case '+':
+            result = num1 + num2;
+            printf("\n      Result: %.2lf\n", result);
+            break;
+        case '-':
+            result = num1 - num2;
+            printf("\n      Result: %.2lf\n", result);
+            break;
+        case '*':
+            result = num1 * num2;
+            printf("\n      Result: %.2lf\n", result);
+            break;
+        case '/':
+            if(num2 != 0) {
+                result = num1 / num2;
+                printf("\n      Result: %.2lf\n", result);
+            } else {
+                printf("\n      Result: Undefined.\n");
+            }
+            break;
+    }
+
+
+        printf("\n---------------------------------------\n");
+
+        // ---------------- ask user about continuing ----------------
+        do {
+            printf("    Would you like to perform\n    another calculation? (y/n): ");
+            scanf(" %c", &cont);
+            while ((buff = getchar()) != '\n' && buff != EOF) {}
+        } while (!(cont == 'y' || cont == 'Y' || cont == 'n' || cont == 'N'));
+
+    } while (cont == 'y' || cont == 'Y');  // repeat main loop if 'y'
+
+    printf("\n    ^_^  Thank you for using\n    the calculator!\n");
+    printf("---------------------------------------\n");
+    return 0;
+}
