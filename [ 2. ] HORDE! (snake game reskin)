@@ -1,0 +1,243 @@
+#include <conio.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <time.h>
+
+// ==== Boundaries ====
+
+#define HEIGHT 25
+#define WIDTH 50
+#define MAX_LEN 100
+
+// ===== Global Variables =====
+int zombieHordeX[MAX_LEN], zombieHordeY[MAX_LEN];
+int zombieHordeLen;
+int hordeover, key, hordescore;
+int x, y, humanx, humany;
+int humanColor;
+int gameSpeed;
+
+
+
+// ===== Function Declarations =====
+void goToXY(int x, int y);
+void setColor(int color);
+void hideCursor();
+void setup();
+void draw();
+void input();
+void logic();
+
+// ===== MAIN =====
+int main() {
+    system("cls");
+    system("mode con: cols=60 lines=35");
+    hideCursor();
+    setup();
+
+    while (!hordeover) {
+        draw();
+        input();
+        logic();
+        Sleep(gameSpeed);
+    }
+
+    goToXY(0, HEIGHT + 6);
+    setColor(12);
+    printf("INFESTATION HALTED! Final Horde Size: %d\n", hordescore);
+    setColor(15);
+
+    _getch();
+    return 0;
+}
+
+// ===== Console Helpers =====
+void goToXY(int x, int y) {
+    COORD coord;
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+void setColor(int color) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+}
+
+void hideCursor() {
+    CONSOLE_CURSOR_INFO cursorInfo;
+    cursorInfo.dwSize = 100;
+    cursorInfo.bVisible = FALSE;
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
+}
+
+// ===== Setup =====
+void setup() {
+    srand(time(NULL));
+
+    hordeover = 0;
+    hordescore = 0;
+    zombieHordeLen = 0;
+    key = 0;
+    gameSpeed = 75;
+
+    x = WIDTH / 2;
+    y = HEIGHT / 2;
+
+    humanx = rand() % (WIDTH - 2) + 1;
+    humany = rand() % (HEIGHT - 2) + 1;
+
+    humanColor = (rand() % 6) + 9; // Bright random color (9–14)
+}
+
+// ===== Draw =====
+void draw() {
+    goToXY(0, 0);
+
+    // Top Border
+    setColor(6); // Yellow border
+    for (int i = 0; i < WIDTH + 2; i++)
+        printf("#");
+    printf("\n");
+
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j <= WIDTH; j++) {
+
+            if (j == 0 || j == WIDTH) {
+                setColor(6);
+                printf("#");                // Side border
+            }
+
+            if (i == y && j == x) {
+                setColor(10); // Bright green leader
+                printf("Z");
+                setColor(15);
+            }
+            else if (i == humany && j == humanx) {
+                setColor(humanColor);
+                printf("H");
+                setColor(15);
+            }
+            else {
+                int printed = 0;
+
+                for (int k = 0; k < zombieHordeLen; k++) {
+                    if (zombieHordeX[k] == j && zombieHordeY[k] == i) {
+                        setColor(2); // Dark green horde
+                        printf("z");
+                        setColor(15);
+                        printed = 1;
+                        break;
+                    }
+                }
+
+                if (!printed)
+                    printf(" ");
+            }
+        }
+        printf("\n");
+    }
+
+    // Bottom Border
+    setColor(6);
+    for (int i = 0; i < WIDTH + 2; i++)
+        printf("#");
+
+
+    setColor(12);
+    printf("\n            H O R D E !\n");
+
+    setColor(15);
+    printf("You control the [Z]ombie leader.\nTurn [H]umans into [z]ombies.\nDominate your HORDE.\n");
+
+    setColor(2);
+    for (int i = 0; i < WIDTH + 2; i++)
+        printf("-");
+    printf("\n");
+
+    setColor(14);
+    printf("Horde has claimed: %d humans\n", hordescore);
+    printf("Controls: W A S D (Press any to START) | E to QUIT\n");
+}
+
+// Input
+void input() {
+    if (_kbhit()) {
+        switch (tolower(_getch())) {
+            case 'a': if (key != 2) key = 1; break;
+            case 'd': if (key != 1) key = 2; break;
+            case 'w': if (key != 4) key = 3; break;
+            case 's': if (key != 3) key = 4; break;
+            case 'e': hordeover = 1; break;
+        }
+    }
+}
+
+// ===== Logic =====
+void logic() {
+
+    int prevX = zombieHordeX[0];
+    int prevY = zombieHordeY[0];
+    int prev2X, prev2Y;
+    int conflict; // declared at top for safety
+
+    // Move the horde segments
+    zombieHordeX[0] = x;
+    zombieHordeY[0] = y;
+
+    for (int i = 1; i < zombieHordeLen; i++) {
+        prev2X = zombieHordeX[i];
+        prev2Y = zombieHordeY[i];
+
+        zombieHordeX[i] = prevX;
+        zombieHordeY[i] = prevY;
+
+        prevX = prev2X;
+        prevY = prev2Y;
+    }
+
+    // Movement
+    switch (key) {
+        case 1: x--; break; // left
+        case 2: x++; break; // right
+        case 3: y--; break; // up
+        case 4: y++; break; // down
+    }
+
+    // Wall collision
+    if (x <= 0 || x >= WIDTH || y < 0 || y >= HEIGHT)
+        hordeover = 1;
+
+    // Self collision
+    for (int i = 0; i < zombieHordeLen; i++) {
+        if (zombieHordeX[i] == x && zombieHordeY[i] == y)
+            hordeover = 1;
+    }
+
+    // Human eaten
+    if (x == humanx && y == humany) {
+        hordescore++;
+        zombieHordeLen++;
+
+        // Increase speed as score increases
+        if (gameSpeed > 40)
+            gameSpeed -= 5;
+
+        // Respawn human safely 2 units away from borders and away from horde/leader
+        do {
+            humanx = rand() % (WIDTH - 4) + 2;   // 2 → WIDTH-3
+            humany = rand() % (HEIGHT - 4) + 2;  // 2 → HEIGHT-3
+
+            conflict = (humanx == x && humany == y); // leader collision
+            for (int j = 0; j < zombieHordeLen; j++) { // use j, not i
+                if (zombieHordeX[j] == humanx && zombieHordeY[j] == humany)
+                    conflict = 1;
+            }
+
+        } while (conflict);
+
+        // Assign a new random bright color to the human
+        humanColor = (rand() % 6) + 9;
+    }
+}
